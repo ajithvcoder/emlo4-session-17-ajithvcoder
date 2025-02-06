@@ -31,6 +31,8 @@ kubectl apply --server-side -f https://github.com/kserve/kserve/releases/downloa
 
 kubectl apply --server-side -f https://github.com/kserve/kserve/releases/download/v0.14.1/kserve.yaml
 
+kubectl get all -n kserve
+
 kubectl apply --server-side -f https://github.com/kserve/kserve/releases/download/v0.14.1/kserve-cluster-resources.yaml
 
 ### Create S3 Service Account
@@ -78,7 +80,7 @@ kubectl patch configmaps -n knative-serving config-deployment --patch-file qpext
 kubectl delete -f vit-classifier.yaml
 kubectl apply -f vit-classifier.yaml
 
-eksctl scale nodegroup --cluster=basic-cluster --nodes=3 ng-spot-3 --nodes-max=3
+eksctl scale nodegroup --cluster=basic-cluster --nodes=6 ng-spot-3 --nodes-max=6
 eksctl get nodegroup --cluster basic-cluster --region ap-south-1 --name ng-spot-3
 Grafana
 kubectl create namespace grafana
@@ -126,3 +128,29 @@ kubectl port-forward svc/argocd-server -n argocd --address 0.0.0.0  8080:443
 kubectl port-forward svc/doc-deployment --address 0.0.0.0 5000:80
 
 work till 10.00 pm and get everything fixed today.(power week)
+
+kubectl apply -f argo-apps
+
+<debug>
+ajith@LAPTOP-OVJI4T62:~/mlops/course/emlo_play/emlo4-s17/emlo4-session-17-ajithvcoder-canary-argocd-kserve$ kubectl apply -f argo-apps
+application.argoproj.io/model-deployments created
+secret/s3creds created
+Warning: resource serviceaccounts/s3-read-only is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+serviceaccount/s3-read-only configured
+</debug>
+
+or", use_fast=True)
+2025-02-06T17:58:51,964 [INFO ] W-9000-imagenet-vit_1.0-stdout MODEL_LOG -   File "/home/venv/lib/python3.9/site-packages/transformers/models/auto/image_processing_auto.py", line 403, in from_pretrained
+2025-02-06T17:58:51,964 [INFO ] W-9000-imagenet-vit_1.0-stdout MODEL_LOG -     raise ValueError(
+2025-02-06T17:58:51,966 [INFO ] W-9000-imagenet-vit_1.0-stdout MODEL_LOG - ValueError: Unrecognized image processor in /home/model-server/tmp/models/31a8c3f52d7d49a3bf7df9c287e9f878/processor. Should have a `image_processor_type` key in its preprocessor_config.json of config.json, or one of the following `model_type` keys in its config.json: align, beit, bit, blip, blip-2, bridgetower, chinese_clip, clip, clipseg, conditional_detr, convnext, convnextv2, cvt, data2vec-vision, deformable_detr, deit, deta, detr, dinat, dinov2, donut-swin, dpt, efficientformer, efficientnet, flava, focalnet, git, glpn, groupvit, idefics, imagegpt, instructblip, layoutlmv2, layoutlmv3, levit, mask2former, maskformer, mgp-str, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, nat, nougat, oneformer, owlvit, perceiver, pix2struct, poolformer, pvt, regnet, resnet, sam, segformer, swiftformer, swin, swin2sr, swinv2, table-transformer, timesformer, tvlt, upernet, van, videomae, vilt, vit, vit_hybrid, vit_mae, vit_msn, vitmatte, xclip, yolos
+https://discuss.huggingface.co/t/error-finding-processors-image-class-loading-based-on-pattern-matching-with-feature-extractor/31890/11
+
+
+debugging
+eksctl scale nodegroup --cluster=basic-cluster --nodes=6 ng-spot-3 --nodes-max=6
+
+problem might be with 
+      modelFormat:
+        name: pytorch
+pytorch image in yaml file of argocd, so use different images for different model-deployments and see.
+first test food-classifier alone seperately and see.

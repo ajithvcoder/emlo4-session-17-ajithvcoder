@@ -30,7 +30,7 @@ managedNodeGroups:
     - t2.xlarge
     - t3.xlarge
     - t3a.xlarge
-    desiredCapacity: 2
+    desiredCapacity: 6
     spot: true
     labels:
       role: spot
