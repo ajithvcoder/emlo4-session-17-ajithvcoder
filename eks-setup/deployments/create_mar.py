@@ -22,11 +22,13 @@ job_queue_size=10
 model_snapshot={{"name":"startup.cfg","modelCount":1,"models":{{"{0}":{{"1.0":{{"defaultVersion":true,"marName":"{0}.mar","minWorkers":1,"maxWorkers":1,"batchSize":1,"maxBatchDelay":100,"responseTimeout":600}}}}}}}}
 """
 MODELS_PATH = [
-    "cat-classifier",
-    "dog-classifier",
-    "food-classifier",
-    "imagenet-vit",
-    "indian-food-classifier",
+    "imagenet-m1",
+    "imagenet-m2",
+    "imagenet-m3",
+    # "dog-classifier",
+    # "food-classifier",
+    # "imagenet-vit",
+    # "indian-food-classifier",
 ]
 
 def setup_directories(base_path, model_name):
@@ -46,17 +48,17 @@ def generate_config(model_path, model_name):
         cfg.write(CONFIG_TEMPLATE.format(model_name))
     print(f"Generated configuration for: {model_name}")
 
-def package_model(model_name, storage_path):
+def package_model(model_name, storage_path, model_path):
     command = [
         "torch-model-archiver",
         "--model-name", model_name,
         "--handler", "classifier_handler.py",
-        "--extra-files", f"models/{model_name}/",
+        "--extra-files", f"models/{model_path}/",
         "--version", "1.0",
         "--export-path", storage_path,
     ]
     try:
-        print(f"Packaging {model_name}.mar at {storage_path}")
+        print(f"Packaging {model_name}.mar at {storage_path} from {model_path}")
         subprocess.run(command, check=True)
         print(f"Successfully packaged: {model_name}.mar")
     except subprocess.CalledProcessError as err:
@@ -64,8 +66,9 @@ def package_model(model_name, storage_path):
 
 if __name__ == "__main__":
     base_directory = "./packaged-models"
-    for model in MODELS:
-        paths = setup_directories(base_directory, model)
-        generate_config(paths["root"], model)
-        package_model(model, paths["store"])
-        print(f"### Completed processing for {model} ###")
+    for model_path in MODELS_PATH:
+        paths = setup_directories(base_directory, model_path)
+        model_name = "imagenet-classifier"
+        generate_config(paths["root"], model_name)
+        package_model(model_name, paths["store"], model_path)
+        print(f"### Completed processing for {model_path} ###")

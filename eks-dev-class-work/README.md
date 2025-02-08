@@ -1,40 +1,289 @@
-# Canary ArgoCD KServe
 
-This example deploys a canary deployment with ArgoCD and KServe.
+eksctl create cluster -f eks-cluster.yaml
+eksctl delete cluster -f eks-cluster.yaml --disable-nodegroup-eviction
+### KNative
+https://medium.com/@cloudspinx/fix-error-metrics-api-not-available-in-kubernetes-aa10766e1c2f
 
-Create an Argo App
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.16.0/serving-crds.yaml
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.16.0/serving-core.yaml
 
-```bash
+kubectl apply -f https://github.com/knative/net-istio/releases/download/knative-v1.16.0/istio.yaml
+###-------- kubectl apply -l knative.dev/crd-install=true -f https://github.com/knative/net-istio/releases/download/knative-v1.16.0/istio.yaml
+kubectl apply -f https://github.com/knative/net-istio/releases/download/knative-v1.16.0/istio.yaml
+kubectl apply -f https://github.com/knative/net-istio/releases/download/knative-v1.16.0/net-istio.yaml
+
+kubectl patch configmap/config-domain \
+      --namespace knative-serving \
+      --type merge \
+      --patch '{"data":{"emlo.tsai":""}}'
+
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.16.0/serving-hpa.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
+
+kubectl get all -n cert-manager
+
+# Wait for cert manager pods to be ready
+
+kubectl apply --server-side -f https://github.com/kserve/kserve/releases/download/v0.14.1/kserve.yaml
+
+### Wait for KServe Controller Manager to be ready
+
+kubectl apply --server-side -f https://github.com/kserve/kserve/releases/download/v0.14.1/kserve.yaml
+
+kubectl get all -n kserve
+
+kubectl apply --server-side -f https://github.com/kserve/kserve/releases/download/v0.14.1/kserve-cluster-resources.yaml
+
+### Create S3 Service Account
+### Create IRSA for S3 Read Only Access
+
+eksctl create iamserviceaccount \
+--cluster=basic-cluster \
+--name=s3-read-only \
+--attach-policy-arn=arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+--override-existing-serviceaccounts \
+--region ap-south-1 \
+--approve
+
+kubectl apply -f s3-secret.yaml
+kubectl patch serviceaccount s3-read-only -p '{"secrets": [{"name": "s3-secret"}]}'
+
+do torchserve works
+
+
+kubectl apply -f vit-classifier.yaml
+
+kubectl apply -f food-classifier.yaml
+
+kubectl
+kubectl get isvc
+
+
+kubectl get isvc
+
+kubectl get svc -n istio-system
+
+prometheus and grafana
+
+git clone --branch release-0.14 https://github.com/kserve/kserve.git
+cd kserve
+kubectl apply -k docs/samples/metrics-and-monitoring/prometheus-operator
+kubectl wait --for condition=established --timeout=120s crd/prometheuses.monitoring.coreos.com
+kubectl wait --for condition=established --timeout=120s crd/servicemonitors.monitoring.coreos.com
+kubectl apply -k docs/samples/metrics-and-monitoring/prometheus
+
+Test if Prometheus is working
+
+kubectl port-forward service/prometheus-operated -n kfserving-monitoring 9090:9090
+
+kubectl patch configmaps -n knative-serving config-deployment --patch-file qpext_image_patch.yaml
+
+kubectl delete -f vit-classifier.yaml
+kubectl apply -f vit-classifier.yaml
+
+eksctl scale nodegroup --cluster=basic-cluster --nodes=6 ng-spot-3 --nodes-max=6
+eksctl get nodegroup --cluster basic-cluster --region ap-south-1 --name ng-spot-3
+Grafana
+kubectl create namespace grafana
+
+helm search hub grafana
+
+helm repo add grafana https://grafana.github.io/helm-charts
+
+helm repo update
+
+helm install grafana grafana/grafana --namespace grafana --version 8.8.4
+
+#### -- kubectl get secret --namespace grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+kubectl get secret --namespace grafana grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+kubectl port-forward svc/grafana 3000:80 -n grafana
+
+kubectl get isvc
+
+Just apply the new canary
+
+<debug>
+kubectl port-forward service/prometheus-operated -n kfserving-monitoring 9090:9090
+http://prometheus-operated.kfserving-monitoring.svc.cluster.local:9090
+
+Not able to connect prometheus and grafana
+------------
+
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+ArgoCD
+
+curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+rm argocd-linux-amd64
+
+argocd admin initial-password -n argocd
+
+kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0
+argocd login --port-forward --port-forward-namespace argocd --plaintext 127.0.0.1:9000
+
+argocd not rechable
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+kubectl port-forward svc/argocd-server -n argocd --address 0.0.0.0  8080:443
+kubectl port-forward svc/doc-deployment --address 0.0.0.0 5000:80
+
+work till 10.00 pm and get everything fixed today.(power week)
+
 kubectl apply -f argo-apps
-```
 
-This will deploy the example model deployments
+<debug>
+ajith@LAPTOP-OVJI4T62:~/mlops/course/emlo_play/emlo4-s17/emlo4-session-17-ajithvcoder-canary-argocd-kserve$ kubectl apply -f argo-apps
+application.argoproj.io/model-deployments created
+secret/s3creds created
+Warning: resource serviceaccounts/s3-read-only is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
+serviceaccount/s3-read-only configured
+</debug>
 
-NOTE: The Models require an s3-read-only Service Account required to download models from S3
+or", use_fast=True)
+2025-02-06T17:58:51,964 [INFO ] W-9000-imagenet-vit_1.0-stdout MODEL_LOG -   File "/home/venv/lib/python3.9/site-packages/transformers/models/auto/image_processing_auto.py", line 403, in from_pretrained
+2025-02-06T17:58:51,964 [INFO ] W-9000-imagenet-vit_1.0-stdout MODEL_LOG -     raise ValueError(
+2025-02-06T17:58:51,966 [INFO ] W-9000-imagenet-vit_1.0-stdout MODEL_LOG - ValueError: Unrecognized image processor in /home/model-server/tmp/models/31a8c3f52d7d49a3bf7df9c287e9f878/processor. Should have a `image_processor_type` key in its preprocessor_config.json of config.json, or one of the following `model_type` keys in its config.json: align, beit, bit, blip, blip-2, bridgetower, chinese_clip, clip, clipseg, conditional_detr, convnext, convnextv2, cvt, data2vec-vision, deformable_detr, deit, deta, detr, dinat, dinov2, donut-swin, dpt, efficientformer, efficientnet, flava, focalnet, git, glpn, groupvit, idefics, imagegpt, instructblip, layoutlmv2, layoutlmv3, levit, mask2former, maskformer, mgp-str, mobilenet_v1, mobilenet_v2, mobilevit, mobilevitv2, nat, nougat, oneformer, owlvit, perceiver, pix2struct, poolformer, pvt, regnet, resnet, sam, segformer, swiftformer, swin, swin2sr, swinv2, table-transformer, timesformer, tvlt, upernet, van, videomae, vilt, vit, vit_hybrid, vit_mae, vit_msn, vitmatte, xclip, yolos
+https://discuss.huggingface.co/t/error-finding-processors-image-class-loading-based-on-pattern-matching-with-feature-extractor/31890/11
 
-Make sure to create one
 
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: s3creds
-  annotations:
-     serving.kserve.io/s3-endpoint: s3.ap-south-1.amazonaws.com # replace with your s3 endpoint e.g minio-service.kubeflow:9000
-     serving.kserve.io/s3-usehttps: "1" # by default 1, if testing with minio you can set to 0
-     serving.kserve.io/s3-region: "ap-south-1"
-     serving.kserve.io/s3-useanoncredential: "false" # omitting this is the same as false, if true will ignore provided credential and use anonymous credentials
-type: Opaque
-stringData: # use `stringData` for raw credential string or `data` for base64 encoded string
-  AWS_ACCESS_KEY_ID: AxxxxQxxxxxxxxY2xxx
-  AWS_SECRET_ACCESS_KEY: "C/dGcccuAxxxxxxxx25mxxxxxxx"
+debugging
+eksctl scale nodegroup --cluster=basic-cluster --nodes=6 ng-spot-3 --nodes-max=6
 
----
+problem might be with 
+      modelFormat:
+        name: pytorch
+pytorch image in yaml file of argocd, so use different images for different model-deployments and see.
+first test food-classifier alone seperately and see.
 
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: s3-read-only
-secrets:
-- name: s3creds
-```
+### Check if you have turned off the instance - 10 dollars wasted in this assignment as you didnt check if the cloud formation is turned off completely
+
+
+Check if food classifier alone is wokring good in kubectl , if it works go with argo-cd deployment for food-classifer alone
+
+argo cd deletion
+argocd app delete APPNAME --cascade
+
+argocd app delete argo-apps --cascade
+
+Delete argocd deployments
+kubectl get app -n argocd
+kubectl patch app model-deployments  -p '{"metadata": {"finalizers": ["resources-finalizer.argocd.argoproj.io"]}}' --type merge -n argocd
+kubectl delete app model-deployments -n argocd
+
+
+Argocd deployment
+kubectl apply -f argo-apps
+git commit to the repo url before you start
+Also have s3-secret.yaml file in argo-apps folder
+
+Have only food-classifer.yaml in model-deployments folder
+""
+    minReplicas: 1
+    maxReplicas: 1
+    containerConcurrency: 1
+    # canaryTrafficPercent: 0
+""
+
+
+
+test load test
+
+kubectl apply -f argo-apps
+
+<-->
+Add cat-classifier.yaml
+""
+    minReplicas: 1
+    maxReplicas: 1
+    containerConcurrency: 1
+    canaryTrafficPercent: 30
+""
+Click Sync in UI or do by cli
+check "kubectl get isvc" percentage of canary
+test load test
+
+increase cat-classifier.yaml
+""
+    minReplicas: 2
+    maxReplicas: 2
+    containerConcurrency: 2
+    canaryTrafficPercent: 100
+""
+
+
+deploy
+test load test
+
+<-->
+Add dog-classifier.yaml
+""
+    minReplicas: 1
+    maxReplicas: 1
+    containerConcurrency: 1
+    canaryTrafficPercent: 30
+""
+decrease cat-classifier.yaml
+""
+    minReplicas: 2
+    maxReplicas: 2
+    containerConcurrency: 2
+    canaryTrafficPercent: 70
+""
+
+
+test load test
+
+increase dog-classifier.yaml
+""
+    minReplicas: 2
+    maxReplicas: 2
+    containerConcurrency: 2
+    canaryTrafficPercent: 100
+""
+decrease cat-classifier.yaml
+""
+    minReplicas: 2
+    maxReplicas: 2
+    containerConcurrency: 2
+    canaryTrafficPercent: 0
+""
+test load test
+
+<-->
+with
+
+
+"""
+I was able to do argocd canary deployment but i have this question
+ for the first model i am using below storageuri - storageUri: s3://mybucket-emlo-mumbai/kserve-ig/food-classifier/
+and the endpoint is "http://a775a10130ee74cd49b37e0b4b585f9e-1718843569.ap-south-1.elb.amazonaws.com/v1/models/cat-classifier:predict " 
+
+then when i change the storage uri for next deployment to "cat-classifier-1" its changing the "model_name" also to cat-classifer-1 
+
+the endpoint is "http://a775a10130ee74cd49b37e0b4b585f9e-1718843569.ap-south-1.elb.amazonaws.com/v1/models/cat-classifier-1:predict " 
+
+now when i make 100 requests to "http://a775a10130ee74cd49b37e0b4b585f9e-1718843569.ap-south-1.elb.amazonaws.com/v1/models/cat-classifier-1:predict " 
+
+the ksvci is 
+
+70 30 see the details
+
+(to test)
+30 are passing and 70 are failing
+Is there any reason for this ? cant we keep the same url and route the traffic to both the models ?
+because in product this canary deployment will face some failed request.
+"""
+
+--------------------
+
+Three models
+
+https://huggingface.co/facebook/deit-tiny-patch16-224
+facebook/deit-small-patch16-224
+https://huggingface.co/timm/vit_tiny_patch16_224.augreg_in21k_ft_in1k
+
+
+aws s3 cp --recursive packaged-models s3://mybucket-emlo-mumbai/kserve-ig/
+
