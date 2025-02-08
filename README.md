@@ -457,7 +457,8 @@ Delete cascade
 - `kubectl patch app model-deployments  -p '{"metadata": {"finalizers": ["resources-finalizer.argocd.argoproj.io"]}}' --type merge -n argocd`
 - `kubectl delete app model-deployments -n argocd`
 
-Deletion
+**Deletion of cluster**
+
 - `eksctl delete cluster -f eks-cluster.yaml --disable-nodegroup-eviction`
 
 **Wait paitently see all deletion is successfull in aws cloud formation stack page and then close the system because some times
