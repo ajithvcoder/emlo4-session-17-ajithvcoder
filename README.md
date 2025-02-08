@@ -3,8 +3,9 @@
 Deploy three imagenet Hugging face modes with AWS EKS service in canary deployment method with Serving tools like KServe, with deployment tools like argoCD and with monitoring tools like prometheus, grafana.
 
 **Wait paitently see all deletion is successfull in aws cloud formation stack page and then close the system because some times
-the deletion gets failed so at backend something would be running and it may cost you high**
-**If you triggering a spot instance manually with `peresistent` type ensure that both the spot request is cancelled manually
+the deletion gets failed so at backend something would be running and it may cost you high**.
+
+**If you are triggering a spot instance manually with `peresistent` type ensure that both the spot request is cancelled manually
 and the AWS instance is terminated finally**
 
 Note: This repo also has the procedure for [ArgoCD deployment repo](https://github.com/ajithvcoder/emlo4-session-17-ajithvcoder-canary-argocd-kserve) `https://github.com/ajithvcoder/emlo4-session-17-ajithvcoder-canary-argocd-kserve`
@@ -359,8 +360,6 @@ Do load test
 - `python load_kserve_in.py -c 2`
 - Check grafana dashboard
 
-<-->
-
 **Step 2: Deploy imagenet-m2 model with 30 percent traffic**
 
 Adjust only following parameters in `imagenet-classifer.yaml`. Note: its not adding newly just replace the values in `minReplicas`, `maxReplicas`, `containerConcurrency`, `storageUri` and uncomment `canaryTrafficPercent`
@@ -405,7 +404,6 @@ Do load test
 - `python load_kserve_in.py -c 2`
 - Check grafana dashboard
 
-<-->
 **Step 4: Deploy imagenet-m3 model with 30 percent traffic**
 
 Adjust only following parameters in `imagenet-classifer.yaml`. Note: its not adding newly just replace the values in `minReplicas`, `maxReplicas`, `containerConcurrency`, `storageUri`, `canaryTrafficPercent`
@@ -464,7 +462,8 @@ Deletion
 
 **Wait paitently see all deletion is successfull in aws cloud formation stack page and then close the system because some times
 the deletion gets failed so at backend something would be running and it may cost you high**
-**If you triggering a spot instance manually with `peresistent` type ensure that both the spot request is cancelled manually
+
+**If you are triggering a spot instance manually with `peresistent` type ensure that both the spot request is cancelled manually
 and the AWS instance is terminated finally**
 
 
