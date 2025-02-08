@@ -7,10 +7,13 @@ the deletion gets failed so at backend something would be running and it may cos
 **If you triggering a spot instance manually with `peresistent` type ensure that both the spot request is cancelled manually
 and the AWS instance is terminated finally**
 
+Note: This repo also has the procedure for [ArgoCD deployment repo](https://github.com/ajithvcoder/emlo4-session-17-ajithvcoder-canary-argocd-kserve) `https://github.com/ajithvcoder/emlo4-session-17-ajithvcoder-canary-argocd-kserve`
+
 ### Contents
 
 - [Requirements](#requirements)
 - [Development Method](#development-method)
+    - [Installation](#installation)
     - [HF models and torchserve files setup](#hf-models-and-torchserve-files-setup)
     - [Cluster creation and configuration](#cluster-creation-and-configuration)
     - [ArgoCD and Canary Deployment](#argocd-and-canary-deployment)
@@ -20,44 +23,25 @@ and the AWS instance is terminated finally**
 
 ### Requirements
 
-- Redo the SD3 Deployment that we did in the class on KServe
-- Create README.mdLinks to an external site.
-    - Write instructions to create the .mar file
-    - Write instruction to deploy the model on KServe
+- Deploy any 3 models (has to be imagenet classifiers) from huggingface
+- Create a Repository with all the code, and deployment files, and argo app yaml files
+- Use ArgoCD to connect your repo for automated deployment
+- You will perform the below deployment step and run send.pyLinks to an external site. to add load to the model
+- Perform Deployment Steps
+    - 1st model with 1 replica
+    - 2nd model with 30% traffic (canary candidate)
+    - 2nd model with 100% traffic (promoted to production)
+    - 2nd model with 2 replicas
+    - 3rd model with 30% traffic (canary candidate)
+    - 3rd model with 100% traffic
+- During the deployments, make sure to use Grafana to see Traffic Metrics
+    - Take screenshots during Canary Deployment of each step in deployment
+        - Service Latency
+        - Service Request Volume
+        - Response Time by Revision
 - What to Submit
-    - Output of kubectl get all -A
-    - Manifest Files used for deployments
-    - Kiali Graph of the Deployment
-    - GPU Usage from Grafana and Prometheus while on LOAD
-    - Logs of your torchserve-predictor
-    - 5 Outputs of the SD3 Model
-        - Make sure you copy the logs of torchserve pod while the model is inferencing
-    - GitHub Repo with the README.md file and manifests and logs
-
-### Architecture Diagram
-
--- todo
-
-### HF models and torchserve files setup
-
-Three models from hugging face are downloaded and used as `imagenet-m1`, `imagenet-m2`, `imagenet-m3` 
-
-- `facebook/deit-tiny-patch16-224`
-- `facebook/deit-small-patch16-224`
-- `WinKawaks/vit-tiny-patch16-224`
-
-In `eks-setup` folder 
-- run `python download_all.py`
-- run `python create_mar.py`
-
-Copy models to aws s3 `mybucket-emlo-mumbai/kserve-ig/` folder. 
-Note: Folder name can change for everyone as it needs to be unique
-- `aws configure`
-- `aws s3 cp --recursive packaged-models s3://mybucket-emlo-mumbai/kserve-ig/`
-
-Verify inside s3 if you can see all above files.
-
-**Note:** All three config model name should be same here but folder names can be different, only then we can use the same url for canary deployment else it would cause 500 error.
+    - Grafana Metrics Screenshots
+    - Link to Github Repo (which is connected to ArgoCD)
 
 ### Installation
 
@@ -109,6 +93,28 @@ chmod +x ./kubectl
 
 mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
 ```
+
+### HF models and torchserve files setup
+
+Three models from hugging face are downloaded and used as `imagenet-m1`, `imagenet-m2`, `imagenet-m3` 
+
+- `facebook/deit-tiny-patch16-224`
+- `facebook/deit-small-patch16-224`
+- `WinKawaks/vit-tiny-patch16-224`
+
+In `eks-setup` folder 
+- run `python download_all.py`
+- run `python create_mar.py`
+
+Copy models to aws s3 `mybucket-emlo-mumbai/kserve-ig/` folder. 
+Note: Folder name can change for everyone as it needs to be unique
+- `aws configure`
+- `aws s3 cp --recursive packaged-models s3://mybucket-emlo-mumbai/kserve-ig/`
+
+Verify inside s3 if you can see all above files.
+
+**Note:** All three config model name should be same here but folder names can be different, only then we can use the same url for canary deployment else it would cause 500 error.
+
 
 ### Cluster creation and configuration
 
